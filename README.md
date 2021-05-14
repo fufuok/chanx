@@ -1,3 +1,9 @@
+# 无限缓存的 channel
+
+Ref: 实现无限缓存的channel | 鸟窝 https://colobu.com/2021/05/11/unbounded-channel-in-go/
+
+*forked from smallnest/chanx*
+
 # chanx
 
 Unbounded chan.
@@ -10,8 +16,11 @@ Refer to the below articles and issues:
 3. https://medium.com/capital-one-tech/building-an-unbounded-channel-in-go-789e175cd2cd
 4. https://erikwinter.nl/articles/2020/channel-with-infinite-buffer-in-golang/
 
-
 ## Usage
+
+```go
+go get github.com/fufuok/chanx
+```
 
 ```go
 ch := NewUnboundedChan(1000)
@@ -28,5 +37,4 @@ go func() {
 for v := range ch.Out { // read values
     fmt.Println(v)
 }
-
 ```
