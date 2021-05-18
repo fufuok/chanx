@@ -24,11 +24,14 @@ go get github.com/fufuok/chanx
 
 ```go
 ch := NewUnboundedChan(1000)
+// or ch := NewUnboundedChanSize(10,200,1000)
 
 go func() {
-    ...
-    ch.In <- ... // send values
-    ...
+    for ...... {
+        ...
+        ch.In <- ... // send values
+        ...
+    }
 
     close(ch.In) // close In channel
 }()
