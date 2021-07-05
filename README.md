@@ -4,6 +4,12 @@ Ref: 实现无限缓存的channel | 鸟窝 https://colobu.com/2021/05/11/unbound
 
 *forked from smallnest/chanx*
 
+## 变动
+
+- 增加初始化可选参数 `maxBufCapacity` 用于限定无限缓存为最大缓存数量, 超过限制丢弃数据
+- 增加动态调整最大缓存数量方法: `c.SetMaxCapacity(0)`, 值为 0 时恢复无限, 返回 0 或当前最大缓存限制数(含初始容量)
+- 增加一些计数方法: `c.BufCapacity()` `c.MaxBufSize()` `c.Discards()`
+
 # chanx
 
 Unbounded chan.

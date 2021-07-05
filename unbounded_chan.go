@@ -23,19 +23,40 @@ func (c UnboundedChan) BufLen() int {
 	return c.buffer.Len()
 }
 
+// BufCapacity returns capacity of the buffer.
+func (c UnboundedChan) BufCapacity() int {
+	return c.buffer.Capacity()
+}
+
+// MaxBufSize returns maximum capacity of the buffer.
+func (c UnboundedChan) MaxBufSize() int {
+	return c.buffer.MaxBufSize()
+}
+
+// Discards returns the number of discards.
+func (c UnboundedChan) Discards() uint64 {
+	return c.buffer.Discards()
+}
+
+// SetMaxCapacity reset the maximum capacity of buffer
+func (c UnboundedChan) SetMaxCapacity(n int) int {
+	return c.buffer.SetMaxCapacity(n)
+}
+
 // NewUnboundedChan creates the unbounded chan.
 // in is used to write without blocking, which supports multiple writers.
 // and out is used to read, which supports multiple readers.
 // You can close the in channel if you want.
-func NewUnboundedChan(initCapacity int) UnboundedChan {
-	return NewUnboundedChanSize(initCapacity, initCapacity, initCapacity)
+func NewUnboundedChan(initCapacity int, maxBufCapacity ...int) UnboundedChan {
+	return NewUnboundedChanSize(initCapacity, initCapacity, initCapacity, maxBufCapacity...)
 }
 
 // NewUnboundedChanSize is like NewUnboundedChan but you can set initial capacity for In, Out, Buffer.
-func NewUnboundedChanSize(initInCapacity, initOutCapacity, initBufCapacity int) UnboundedChan {
+// and max buffer capactiy.
+func NewUnboundedChanSize(initInCapacity, initOutCapacity, initBufCapacity int, maxBufCapacity ...int) UnboundedChan {
 	in := make(chan T, initInCapacity)
 	out := make(chan T, initOutCapacity)
-	ch := UnboundedChan{In: in, Out: out, buffer: NewRingBuffer(initBufCapacity)}
+	ch := UnboundedChan{In: in, Out: out, buffer: NewRingBuffer(initBufCapacity, maxBufCapacity...)}
 
 	go process(in, out, ch)
 
