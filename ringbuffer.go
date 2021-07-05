@@ -77,7 +77,7 @@ func (r *RingBuffer) Peek() T {
 }
 
 func (r *RingBuffer) Write(v T) {
-	if r.maxBufSize > 0 && r.w >= r.maxBufSize {
+	if r.maxBufSize > 0 && r.Len() >= r.maxBufSize {
 		r.discards += 1
 		return
 	}
