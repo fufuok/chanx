@@ -10,6 +10,12 @@ Ref: 实现无限缓存的channel | 鸟窝 https://colobu.com/2021/05/11/unbound
 - 增加动态调整最大缓存数量方法: `c.SetMaxCapacity(0)`, 值为 0 时恢复无限, 返回 0 或当前最大缓存限制数(含初始容量)
 - 增加一些计数方法: `c.BufCapacity()` `c.MaxBufSize()` `c.Discards()`
 
+## 使用
+
+- `go1.17.x` 及更低版本可以使用: `v0.x.x` 版本, 对应 `go1.17` 分支
+- `go1.18` 及以上版本使用: `v1.x.x` 版本, 对应 `master` 分支
+- 两个版本同步更新, 示例: `TestMakeUnboundedChanSizeMaxBuf`, `TestMakeUnboundedChanSizeMaxBufCount`
+
 # chanx
 
 Unbounded chan.
@@ -29,7 +35,9 @@ go get github.com/fufuok/chanx
 ```
 
 ```go
-ch := NewUnboundedChan(1000)
+const maxBufCapacity = 100000
+ch := NewUnboundedChan(1000, maxBufCapacity)
+// ch := NewUnboundedChan(1000)
 // or ch := NewUnboundedChanSize(10,200,1000)
 
 go func() {

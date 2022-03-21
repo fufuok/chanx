@@ -9,7 +9,7 @@ import (
 )
 
 func TestMakeUnboundedChan(t *testing.T) {
-	ch := NewUnboundedChan(100)
+	ch := NewUnboundedChan[int64](100)
 
 	for i := 1; i < 200; i++ {
 		ch.In <- int64(i)
@@ -22,7 +22,7 @@ func TestMakeUnboundedChan(t *testing.T) {
 		defer wg.Done()
 
 		for v := range ch.Out {
-			count += v.(int64)
+			count += v
 		}
 	}()
 
@@ -39,7 +39,7 @@ func TestMakeUnboundedChan(t *testing.T) {
 }
 
 func TestMakeUnboundedChanSize(t *testing.T) {
-	ch := NewUnboundedChanSize(10, 50, 100)
+	ch := NewUnboundedChanSize[int64](10, 50, 100)
 
 	for i := 1; i < 200; i++ {
 		ch.In <- int64(i)
@@ -52,7 +52,7 @@ func TestMakeUnboundedChanSize(t *testing.T) {
 		defer wg.Done()
 
 		for v := range ch.Out {
-			count += v.(int64)
+			count += v
 		}
 	}()
 
@@ -69,7 +69,7 @@ func TestMakeUnboundedChanSize(t *testing.T) {
 }
 
 func TestLen_DataRace(t *testing.T) {
-	ch := NewUnboundedChan(1)
+	ch := NewUnboundedChan[int64](1)
 	stop := make(chan bool)
 	for i := 0; i < 100; i++ { // may tweak the number of iterations
 		go func() {
@@ -92,7 +92,7 @@ func TestLen_DataRace(t *testing.T) {
 }
 
 func TestLen(t *testing.T) {
-	ch := NewUnboundedChanSize(10, 50, 100)
+	ch := NewUnboundedChanSize[int64](10, 50, 100)
 
 	for i := 1; i < 200; i++ {
 		ch.In <- int64(i)
@@ -131,7 +131,7 @@ func TestMakeUnboundedChanSizeMaxBuf(t *testing.T) {
 	initOutCapacity := 50
 	initBufCapacity := 100
 	maxBufCapacity := 10
-	ch := NewUnboundedChanSize(initInCapacity, initOutCapacity, initBufCapacity, maxBufCapacity)
+	ch := NewUnboundedChanSize[uint64](initInCapacity, initOutCapacity, initBufCapacity, maxBufCapacity)
 
 	for i := 0; i < 200; i++ {
 		ch.In <- uint64(i)
@@ -180,7 +180,7 @@ func TestMakeUnboundedChanSizeMaxBufCount(t *testing.T) {
 	initOutCapacity := 50
 	initBufCapacity := 100
 	maxBufCapacity := 10
-	ch := NewUnboundedChanSize(initInCapacity, initOutCapacity, initBufCapacity, maxBufCapacity)
+	ch := NewUnboundedChanSize[uint64](initInCapacity, initOutCapacity, initBufCapacity, maxBufCapacity)
 
 	var count uint64
 
@@ -192,7 +192,6 @@ func TestMakeUnboundedChanSizeMaxBufCount(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-
 		for range ch.Out {
 			count += 1
 		}
