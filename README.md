@@ -35,23 +35,30 @@ go get github.com/fufuok/chanx
 ```
 
 ```go
-const maxBufCapacity = 100000
-ch := NewUnboundedChan(1000, maxBufCapacity)
-// ch := NewUnboundedChan(1000)
-// or ch := NewUnboundedChanSize(10,200,1000)
+package main
 
-go func() {
-    for ...... {
-        ...
-        ch.In <- ... // send values
-        ...
-    }
+import (
+	"fmt"
 
-    close(ch.In) // close In channel
-}()
+	"github.com/fufuok/chanx"
+)
 
+func main() {
+	// 可选参数, 缓冲上限
+	// const maxBufCapacity = 100000
+	// ch := chanx.NewUnboundedChan[int](10, maxBufCapacity)
+	ch := chanx.NewUnboundedChan[int](10)
+	// or ch := chanx.NewUnboundedChanSize[int](10,200,1000)
 
-for v := range ch.Out { // read values
-    fmt.Println(v)
+	go func() {
+		for i := 0; i < 100; i++ {
+			ch.In <- i // send values
+		}
+		close(ch.In) // close In channel
+	}()
+
+	for v := range ch.Out { // read values
+		fmt.Println(v + 1)
+	}
 }
 ```
