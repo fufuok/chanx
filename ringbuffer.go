@@ -19,6 +19,7 @@ type RingBuffer[T any] struct {
 	discards    uint64
 	r           int // read pointer
 	w           int // write pointer
+	onDiscards  func(T)
 }
 
 func NewRingBuffer[T any](initialSize int, maxBufCapacity ...int) *RingBuffer[T] {
@@ -80,7 +81,10 @@ func (r *RingBuffer[T]) Peek() T {
 
 func (r *RingBuffer[T]) Write(v T) {
 	if r.maxBufSize > 0 && r.Len() >= r.maxBufSize {
-		r.discards += 1
+		r.discards++
+		if r.onDiscards != nil {
+			r.onDiscards(v)
+		}
 		return
 	}
 
@@ -161,4 +165,10 @@ func (r *RingBuffer[T]) SetMaxCapacity(n int) int {
 	}
 
 	return r.MaxBufSize()
+}
+
+func (r *RingBuffer[T]) SetOnDiscards(fn func(T)) {
+	if fn != nil {
+		r.onDiscards = fn
+	}
 }

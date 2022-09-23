@@ -176,13 +176,18 @@ func TestMakeUnboundedChanSizeMaxBuf(t *testing.T) {
 }
 
 func TestMakeUnboundedChanSizeMaxBufCount(t *testing.T) {
-	initInCapacity := 10
-	initOutCapacity := 50
-	initBufCapacity := 100
-	maxBufCapacity := 10
+	var (
+		initInCapacity        = 10
+		initOutCapacity       = 50
+		initBufCapacity       = 100
+		maxBufCapacity        = 10
+		count                 uint64
+		callbackDiscardsCount uint64
+	)
 	ch := NewUnboundedChanSize[uint64](initInCapacity, initOutCapacity, initBufCapacity, maxBufCapacity)
-
-	var count uint64
+	ch.SetOnDiscards(func(v uint64) {
+		callbackDiscardsCount++
+	})
 
 	for i := 1; i < 200; i++ {
 		ch.In <- uint64(i)
@@ -193,7 +198,7 @@ func TestMakeUnboundedChanSizeMaxBufCount(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		for range ch.Out {
-			count += 1
+			count++
 		}
 	}()
 
@@ -219,6 +224,10 @@ func TestMakeUnboundedChanSizeMaxBufCount(t *testing.T) {
 
 	if discards > maxDiscards {
 		t.Fatalf("expected discards <= %d but got %d", maxDiscards, discards)
+	}
+
+	if discards != callbackDiscardsCount {
+		t.Fatalf("expected discards == callbackDiscardsCount, but got %d and %d", callbackDiscardsCount, discards)
 	}
 
 	if count == 1000 {

@@ -49,6 +49,11 @@ func (c UnboundedChan[T]) SetMaxCapacity(n int) int {
 	return c.buffer.SetMaxCapacity(n)
 }
 
+// SetOnDiscards set the callback function when data is discarded
+func (c UnboundedChan[T]) SetOnDiscards(fn func(T)) {
+	c.buffer.SetOnDiscards(fn)
+}
+
 // NewUnboundedChan creates the unbounded chan.
 // in is used to write without blocking, which supports multiple writers.
 // and out is used to read, which supports multiple readers.
