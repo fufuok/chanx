@@ -1,4 +1,4 @@
-# 无限缓存的 channel
+# 永不阻塞, 无限缓存的 channel
 
 Ref: 实现无限缓存的channel | 鸟窝 https://colobu.com/2021/05/11/unbounded-channel-in-go/
 
@@ -6,20 +6,26 @@ Ref: 实现无限缓存的channel | 鸟窝 https://colobu.com/2021/05/11/unbound
 
 ## 变动
 
-- 增加初始化可选参数 `maxBufCapacity` 用于限定无限缓存为最大缓存数量, 超过限制丢弃数据
-- 增加数据丢弃时回调方法, 用于数据达到限定的最大缓存数量并丢弃时, 将数据传给回调方法处理(无限缓存无效)
-- 增加动态调整最大缓存数量方法: `c.SetMaxCapacity(0)`, 值为 0 时恢复无限, 返回 0 或当前最大缓存限制数(含初始容量)
+- 增加初始化可选参数 `maxBufCapacity` 
+  - 用于限定最大缓存数量, 将无限缓存变为永不阻塞的有限缓存队列, 超过限制丢弃数据
+- 增加数据丢弃时回调方法: `c.SetOnDiscards(func(T))`
+  - 用于数据达到限定的最大缓存数量并丢弃时, 将数据传给回调方法处理(无限缓存无效)
+- 增加动态调整最大缓存数量方法: `c.SetMaxCapacity(0)`
+  - 值为 0 时恢复无限缓存, 返回值为 0 或当前最大缓存限制数(含初始容量)
 - 增加一些计数方法: `c.BufCapacity()` `c.MaxBufSize()` `c.Discards()`
 
 ## 使用
 
-- `go1.17.x` 及更低版本可以使用: `v0.x.x` 版本, 对应 `go1.17` 分支
-- `go1.18` 及以上版本使用: `v1.x.x` 版本, 对应 `master` 分支
-- 两个版本同步更新, 示例: `TestMakeUnboundedChanSizeMaxBuf`, `TestMakeUnboundedChanSizeMaxBufCount`
+- 通用: [unbounded_chan_test.go](unbounded_chan_test.go)
+- 泛型: [unbounded_chanof_test.go](unbounded_chanof_test.go)
+
+### 安装
 
 ```go
 go get github.com/fufuok/chanx
 ```
+
+### 永不阻塞, 无限缓存的 Channel
 
 ```go
 package main
@@ -31,10 +37,7 @@ import (
 )
 
 func main() {
-	// 可选参数, 缓冲上限
-	// const maxBufCapacity = 100000
-	// ch := chanx.NewUnboundedChan[int](10, maxBufCapacity)
-	ch := chanx.NewUnboundedChan[int](10)
+	ch := chanx.NewUnboundedChanOf[int](10)
 	// or ch := chanx.NewUnboundedChanSize[int](10, 200, 1000)
 
 	go func() {
@@ -50,6 +53,8 @@ func main() {
 }
 ```
 
+### 永不阻塞, 带缓存上限的 Channel
+
 ```go
 package main
 
@@ -62,7 +67,7 @@ import (
 func main() {
 	// 可选参数, 缓冲上限
 	const maxBufCapacity = 10
-	ch := chanx.NewUnboundedChan[int](10, maxBufCapacity)
+	ch := chanx.NewUnboundedChanOf[int](10, maxBufCapacity)
 	// or
 	// ch := chanx.NewUnboundedChanSize[int](10, 10, 10, maxBufCapacity)
 
@@ -81,7 +86,7 @@ func main() {
 	// time.Sleep(time.Second)
 
 	for v := range ch.Out { // read values
-		fmt.Println(v)
+		fmt.Println(v + 0)
 	}
 }
 ```

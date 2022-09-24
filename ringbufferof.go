@@ -1,17 +1,14 @@
+//go:build go1.18
+// +build go1.18
+
 package chanx
 
-import (
-	"errors"
-)
-
-var ErrIsEmpty = errors.New("ringbuffer is empty")
-
-// RingBuffer is a ring buffer for common types.
+// RingBufferOf is a ring buffer for common types.
 // It never is full and always grows if it will be full.
 // It is not thread-safe(goroutine-safe) so you must use the lock-like synchronization primitive
 // to use it in multiple writers and multiple readers.
 // Beyond maxBufSize, data is discarded.
-type RingBuffer struct {
+type RingBufferOf[T any] struct {
 	buf         []T
 	initialSize int
 	size        int
@@ -19,10 +16,10 @@ type RingBuffer struct {
 	discards    uint64
 	r           int // read pointer
 	w           int // write pointer
-	onDiscards  func(interface{})
+	onDiscards  func(T)
 }
 
-func NewRingBuffer(initialSize int, maxBufCapacity ...int) *RingBuffer {
+func NewRingBufferOf[T any](initialSize int, maxBufCapacity ...int) *RingBufferOf[T] {
 	if initialSize <= 0 {
 		panic("initial size must be great than zero")
 	}
@@ -38,7 +35,7 @@ func NewRingBuffer(initialSize int, maxBufCapacity ...int) *RingBuffer {
 		}
 	}
 
-	return &RingBuffer{
+	return &RingBufferOf[T]{
 		buf:         make([]T, initialSize),
 		initialSize: initialSize,
 		size:        initialSize,
@@ -46,9 +43,10 @@ func NewRingBuffer(initialSize int, maxBufCapacity ...int) *RingBuffer {
 	}
 }
 
-func (r *RingBuffer) Read() (T, error) {
+func (r *RingBufferOf[T]) Read() (T, error) {
+	var t T
 	if r.r == r.w {
-		return nil, ErrIsEmpty
+		return t, ErrIsEmpty
 	}
 
 	v := r.buf[r.r]
@@ -60,7 +58,7 @@ func (r *RingBuffer) Read() (T, error) {
 	return v, nil
 }
 
-func (r *RingBuffer) Pop() T {
+func (r *RingBufferOf[T]) Pop() T {
 	v, err := r.Read()
 	if err == ErrIsEmpty { // Empty
 		panic(ErrIsEmpty.Error())
@@ -69,7 +67,7 @@ func (r *RingBuffer) Pop() T {
 	return v
 }
 
-func (r *RingBuffer) Peek() T {
+func (r *RingBufferOf[T]) Peek() T {
 	if r.r == r.w { // Empty
 		panic(ErrIsEmpty.Error())
 	}
@@ -78,7 +76,7 @@ func (r *RingBuffer) Peek() T {
 	return v
 }
 
-func (r *RingBuffer) Write(v T) {
+func (r *RingBufferOf[T]) Write(v T) {
 	if r.maxBufSize > 0 && r.Len() >= r.maxBufSize {
 		r.discards++
 		if r.onDiscards != nil {
@@ -99,7 +97,7 @@ func (r *RingBuffer) Write(v T) {
 	}
 }
 
-func (r *RingBuffer) grow() {
+func (r *RingBufferOf[T]) grow() {
 	var size int
 	if r.size < 1024 {
 		size = r.size * 2
@@ -118,24 +116,24 @@ func (r *RingBuffer) grow() {
 	r.buf = buf
 }
 
-func (r *RingBuffer) IsEmpty() bool {
+func (r *RingBufferOf[T]) IsEmpty() bool {
 	return r.r == r.w
 }
 
 // Capacity returns the size of the underlying buffer.
-func (r *RingBuffer) Capacity() int {
+func (r *RingBufferOf[T]) Capacity() int {
 	return r.size
 }
 
-func (r *RingBuffer) MaxBufSize() int {
+func (r *RingBufferOf[T]) MaxBufSize() int {
 	return r.maxBufSize
 }
 
-func (r *RingBuffer) Discards() uint64 {
+func (r *RingBufferOf[T]) Discards() uint64 {
 	return r.discards
 }
 
-func (r *RingBuffer) Len() int {
+func (r *RingBufferOf[T]) Len() int {
 	if r.r == r.w {
 		return 0
 	}
@@ -147,14 +145,14 @@ func (r *RingBuffer) Len() int {
 	return r.size - r.r + r.w
 }
 
-func (r *RingBuffer) Reset() {
+func (r *RingBufferOf[T]) Reset() {
 	r.r = 0
 	r.w = 0
 	r.size = r.initialSize
 	r.buf = make([]T, r.initialSize)
 }
 
-func (r *RingBuffer) SetMaxCapacity(n int) int {
+func (r *RingBufferOf[T]) SetMaxCapacity(n int) int {
 	if n == 0 {
 		// Unbounded
 		r.maxBufSize = 0
@@ -166,7 +164,7 @@ func (r *RingBuffer) SetMaxCapacity(n int) int {
 	return r.MaxBufSize()
 }
 
-func (r *RingBuffer) SetOnDiscards(fn func(interface{})) {
+func (r *RingBufferOf[T]) SetOnDiscards(fn func(T)) {
 	if fn != nil {
 		r.onDiscards = fn
 	}

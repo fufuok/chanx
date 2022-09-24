@@ -1,3 +1,6 @@
+//go:build go1.18
+// +build go1.18
+
 package chanx
 
 import (
@@ -6,10 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRingBuffer(t *testing.T) {
-	rb := NewRingBuffer(10)
+func TestRingBufferOf(t *testing.T) {
+	rb := NewRingBufferOf[int](10)
 	v, err := rb.Read()
-	assert.Nil(t, v)
+	assert.Equal(t, v, 0)
 	assert.Error(t, err, ErrIsEmpty)
 
 	write := 0
@@ -52,7 +55,7 @@ func TestRingBuffer(t *testing.T) {
 			break
 		}
 
-		read += v.(int)
+		read += v
 	}
 
 	assert.Equal(t, write, read)
@@ -63,10 +66,10 @@ func TestRingBuffer(t *testing.T) {
 	assert.True(t, rb.IsEmpty())
 }
 
-func TestRingBuffer_One(t *testing.T) {
-	rb := NewRingBuffer(1)
+func TestRingBufferOf_One(t *testing.T) {
+	rb := NewRingBufferOf[int](1)
 	v, err := rb.Read()
-	assert.Nil(t, v)
+	assert.Equal(t, v, 0)
 	assert.Error(t, err, ErrIsEmpty)
 
 	write := 0
@@ -109,7 +112,7 @@ func TestRingBuffer_One(t *testing.T) {
 			break
 		}
 
-		read += v.(int)
+		read += v
 	}
 
 	assert.Equal(t, write, read)
