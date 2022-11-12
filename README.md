@@ -1,8 +1,8 @@
-# 永不阻塞, 无限缓存的 channel
+# 永不阻塞, 无限缓存的 Channel
+
+*A never-blocking, infinitely buffered channel. forked from smallnest/chanx*
 
 Ref: 实现无限缓存的channel | 鸟窝 https://colobu.com/2021/05/11/unbounded-channel-in-go/
-
-*forked from smallnest/chanx*
 
 ## 变动
 
@@ -16,8 +16,8 @@ Ref: 实现无限缓存的channel | 鸟窝 https://colobu.com/2021/05/11/unbound
 
 ## 使用
 
-- 通用: [unbounded_chan_test.go](unbounded_chan_test.go)
-- 泛型: [unbounded_chanof_test.go](unbounded_chanof_test.go)
+- Go 1.17.x or below: [unbounded_chan_test.go](unbounded_chan_test.go)
+- Go generic: [unbounded_chanof_test.go](unbounded_chanof_test.go)
 
 ### 安装
 
@@ -26,6 +26,8 @@ go get github.com/fufuok/chanx
 ```
 
 ### 永不阻塞, 无限缓存的 Channel
+
+*Never Block, Infinitely Cached Channel*
 
 ```go
 package main
@@ -55,6 +57,8 @@ func main() {
 
 ### 永不阻塞, 带缓存上限的 Channel
 
+*Never block, Channel with buffer cap*
+
 ```go
 package main
 
@@ -66,12 +70,14 @@ import (
 
 func main() {
 	// 可选参数, 缓冲上限
+	// optional parameter, buffer cap
 	const maxBufCapacity = 10
 	ch := chanx.NewUnboundedChanOf[int](10, maxBufCapacity)
 	// or
 	// ch := chanx.NewUnboundedChanSize[int](10, 10, 10, maxBufCapacity)
 
 	// 有缓冲上限时, 可选设置数据丢弃时回调
+	// When there is a buffer limit, optionally set the callback when data is discarded
 	ch.SetOnDiscards(func(v int) {
 		fmt.Println("discard: ", v)
 	})
@@ -95,7 +101,7 @@ func main() {
 
 # chanx
 
-Unbounded chan.
+Unbounded chan with ringbuffer.
 
 [![License](https://img.shields.io/:license-MIT-blue.svg)](https://opensource.org/licenses/MIT) [![GoDoc](https://godoc.org/github.com/smallnest/chanx?status.png)](http://godoc.org/github.com/smallnest/chanx)  [![travis](https://travis-ci.org/smallnest/chanx.svg?branch=main)](https://travis-ci.org/smallnest/chanx) [![Go Report Card](https://goreportcard.com/badge/github.com/smallnest/chanx)](https://goreportcard.com/report/github.com/smallnest/chanx) [![coveralls](https://coveralls.io/repos/smallnest/chanx/badge.svg?branch=main&service=github)](https://coveralls.io/github/smallnest/chanx?branch=main) 
 
@@ -104,4 +110,5 @@ Refer to the below articles and issues:
 2. https://stackoverflow.com/questions/41906146/why-go-channels-limit-the-buffer-size
 3. https://medium.com/capital-one-tech/building-an-unbounded-channel-in-go-789e175cd2cd
 4. https://erikwinter.nl/articles/2020/channel-with-infinite-buffer-in-golang/
+
 
