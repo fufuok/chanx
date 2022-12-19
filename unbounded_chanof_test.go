@@ -133,7 +133,7 @@ func TestMakeUnboundedChanSizeOfMaxBuf(t *testing.T) {
 	initInCapacity := 10
 	initOutCapacity := 50
 	initBufCapacity := 100
-	maxBufCapacity := 10
+	maxBufCapacity := 110
 	ch := NewUnboundedChanSizeOf[uint64](initInCapacity, initOutCapacity, initBufCapacity, maxBufCapacity)
 
 	for i := 0; i < 200; i++ {
@@ -141,12 +141,12 @@ func TestMakeUnboundedChanSizeOfMaxBuf(t *testing.T) {
 		time.Sleep(time.Millisecond)
 	}
 
-	maxBufCap := ch.MaxBufSize()
-	maxDiscards := uint64(200 - maxBufCap - initOutCapacity)
+	maxBufferSize := ch.MaxBufferSize()
+	maxDiscards := uint64(200 - maxBufferSize - initOutCapacity)
 	discards := ch.Discards()
 
-	if maxBufCap != (initBufCapacity + maxBufCapacity) {
-		t.Fatalf("expected maxBufCapacity == 110 but got %d", maxBufCap)
+	if maxBufferSize != maxBufCapacity {
+		t.Fatalf("expected maxBufCapacity == 110 but got %d", maxBufferSize)
 	}
 
 	if discards != maxDiscards {
@@ -154,19 +154,19 @@ func TestMakeUnboundedChanSizeOfMaxBuf(t *testing.T) {
 	}
 
 	// Restore unlimited
-	ch.SetMaxCapacity(0)
+	ch.SetMaxBufferSize(0)
 
 	for i := 0; i < 200; i++ {
 		ch.In <- uint64(i)
 		time.Sleep(time.Millisecond)
 	}
 
-	newMaxBufCap := ch.MaxBufSize()
+	newMaxBufCap := ch.MaxBufferSize()
 	newDiscards := ch.Discards()
 	bufCapacity := ch.BufCapacity()
 
 	if newMaxBufCap != 0 {
-		t.Fatalf("expected maxBufCapacity == 0 but got %d", maxBufCap)
+		t.Fatalf("expected maxBufCapacity == 0 but got %d", maxBufferSize)
 	}
 
 	if newDiscards != discards {
@@ -183,7 +183,7 @@ func TestMakeUnboundedChanSizeOfMaxBufCount(t *testing.T) {
 		initInCapacity        = 10
 		initOutCapacity       = 50
 		initBufCapacity       = 100
-		maxBufCapacity        = 10
+		maxBufCapacity        = 110
 		count                 uint64
 		callbackDiscardsCount uint64
 	)
@@ -212,13 +212,13 @@ func TestMakeUnboundedChanSizeOfMaxBufCount(t *testing.T) {
 
 	wg.Wait()
 
-	maxBufCap := ch.MaxBufSize()
-	maxDiscards := uint64(1000 - maxBufCap - initOutCapacity)
+	maxBufferSize := ch.MaxBufferSize()
+	maxDiscards := uint64(1000 - maxBufferSize - initOutCapacity)
 	discards := ch.Discards()
 	allCount := count + discards
 
-	if maxBufCap != (initBufCapacity + maxBufCapacity) {
-		t.Fatalf("expected maxBufCapacity == 110 but got %d", maxBufCap)
+	if maxBufferSize != maxBufCapacity {
+		t.Fatalf("expected maxBufCapacity == 110 but got %d", maxBufferSize)
 	}
 
 	if discards < 1 {

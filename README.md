@@ -6,13 +6,13 @@ Ref: 实现无限缓存的channel | 鸟窝 https://colobu.com/2021/05/11/unbound
 
 ## 变动
 
-- 增加初始化可选参数 `maxBufCapacity` 
+- 增加初始化可选参数 `maxBufferSize` 
   - 用于限定最大缓存数量, 将无限缓存变为永不阻塞的有限缓存队列, 超过限制丢弃数据
 - 增加数据丢弃时回调方法: `c.SetOnDiscards(func(T))`
   - 用于数据达到限定的最大缓存数量并丢弃时, 将数据传给回调方法处理(无限缓存无效)
-- 增加动态调整最大缓存数量方法: `c.SetMaxCapacity(0)`
+- 增加动态调整最大缓存数量方法: `c.SetMaxBufferSize(0)`
   - 值为 0 时恢复无限缓存, 返回值为 0 或当前最大缓存限制数(含初始容量)
-- 增加一些计数方法: `c.BufCapacity()` `c.MaxBufSize()` `c.Discards()`
+- 增加一些计数方法: `c.BufCapacity()` `c.MaxBufferSize()` `c.Discards()`
 
 ## 使用
 
@@ -57,7 +57,7 @@ func main() {
 
 ### 永不阻塞, 带缓存上限的 Channel
 
-*Never block, Channel with buffer cap*
+*Never block, Channel with buffer size limit*
 
 ```go
 package main
@@ -70,11 +70,11 @@ import (
 
 func main() {
 	// 可选参数, 缓冲上限
-	// optional parameter, buffer cap
-	const maxBufCapacity = 10
-	ch := chanx.NewUnboundedChanOf[int](10, maxBufCapacity)
+	// optional parameter, buffer size limit
+	const maxBufferSize = 10
+	ch := chanx.NewUnboundedChanOf[int](10, maxBufferSize)
 	// or
-	// ch := chanx.NewUnboundedChanSize[int](10, 10, 10, maxBufCapacity)
+	// ch := chanx.NewUnboundedChanSize[int](10, 10, 10, maxBufferSize)
 
 	// 有缓冲上限时, 可选设置数据丢弃时回调
 	// When there is a buffer limit, optionally set the callback when data is discarded

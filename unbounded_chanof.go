@@ -37,9 +37,9 @@ func (c UnboundedChanOf[T]) BufCapacity() int {
 	return c.buffer.Capacity()
 }
 
-// MaxBufSize returns maximum capacity of the buffer.
-func (c UnboundedChanOf[T]) MaxBufSize() int {
-	return c.buffer.MaxBufSize()
+// MaxBufferSize returns maximum capacity of the buffer.
+func (c UnboundedChanOf[T]) MaxBufferSize() int {
+	return c.buffer.MaxSize()
 }
 
 // Discards returns the number of discards.
@@ -47,9 +47,9 @@ func (c UnboundedChanOf[T]) Discards() uint64 {
 	return c.buffer.Discards()
 }
 
-// SetMaxCapacity reset the maximum capacity of buffer
-func (c UnboundedChanOf[T]) SetMaxCapacity(n int) int {
-	return c.buffer.SetMaxCapacity(n)
+// SetMaxBufferSize reset the maximum capacity of buffer
+func (c UnboundedChanOf[T]) SetMaxBufferSize(n int) int {
+	return c.buffer.SetMaxSize(n)
 }
 
 // SetOnDiscards set the callback function when data is discarded
@@ -61,16 +61,16 @@ func (c UnboundedChanOf[T]) SetOnDiscards(fn func(T)) {
 // in is used to write without blocking, which supports multiple writers.
 // and out is used to read, which supports multiple readers.
 // You can close the in channel if you want.
-func NewUnboundedChanOf[T any](initCapacity int, maxBufCapacity ...int) *UnboundedChanOf[T] {
-	return NewUnboundedChanSizeOf[T](initCapacity, initCapacity, initCapacity, maxBufCapacity...)
+func NewUnboundedChanOf[T any](initCapacity int, maxBufferSize ...int) *UnboundedChanOf[T] {
+	return NewUnboundedChanSizeOf[T](initCapacity, initCapacity, initCapacity, maxBufferSize...)
 }
 
 // NewUnboundedChanSizeOf is like NewUnboundedChanOf but you can set initial capacity for In, Out, Buffer.
 // and max buffer capactiy.
-func NewUnboundedChanSizeOf[T any](initInCapacity, initOutCapacity, initBufCapacity int, maxBufCapacity ...int) *UnboundedChanOf[T] {
+func NewUnboundedChanSizeOf[T any](initInCapacity, initOutCapacity, initBufCapacity int, maxBufferSize ...int) *UnboundedChanOf[T] {
 	in := make(chan T, initInCapacity)
 	out := make(chan T, initOutCapacity)
-	ch := UnboundedChanOf[T]{In: in, Out: out, buffer: NewRingBufferOf[T](initBufCapacity, maxBufCapacity...)}
+	ch := UnboundedChanOf[T]{In: in, Out: out, buffer: NewRingBufferOf[T](initBufCapacity, maxBufferSize...)}
 
 	go processOf(in, out, &ch)
 

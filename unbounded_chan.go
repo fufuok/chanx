@@ -37,9 +37,9 @@ func (c UnboundedChan) BufCapacity() int {
 	return c.buffer.Capacity()
 }
 
-// MaxBufSize returns maximum capacity of the buffer.
-func (c UnboundedChan) MaxBufSize() int {
-	return c.buffer.MaxBufSize()
+// MaxBufferSize returns maximum capacity of the buffer.
+func (c UnboundedChan) MaxBufferSize() int {
+	return c.buffer.MaxSize()
 }
 
 // Discards returns the number of discards.
@@ -47,9 +47,9 @@ func (c UnboundedChan) Discards() uint64 {
 	return c.buffer.Discards()
 }
 
-// SetMaxCapacity reset the maximum capacity of buffer
-func (c UnboundedChan) SetMaxCapacity(n int) int {
-	return c.buffer.SetMaxCapacity(n)
+// SetMaxBufferSize reset the maximum capacity of buffer
+func (c UnboundedChan) SetMaxBufferSize(n int) int {
+	return c.buffer.SetMaxSize(n)
 }
 
 // SetOnDiscards set the callback function when data is discarded
@@ -61,16 +61,16 @@ func (c UnboundedChan) SetOnDiscards(fn func(interface{})) {
 // in is used to write without blocking, which supports multiple writers.
 // and out is used to read, which supports multiple readers.
 // You can close the in channel if you want.
-func NewUnboundedChan(initCapacity int, maxBufCapacity ...int) *UnboundedChan {
-	return NewUnboundedChanSize(initCapacity, initCapacity, initCapacity, maxBufCapacity...)
+func NewUnboundedChan(initCapacity int, maxBufferSize ...int) *UnboundedChan {
+	return NewUnboundedChanSize(initCapacity, initCapacity, initCapacity, maxBufferSize...)
 }
 
 // NewUnboundedChanSize is like NewUnboundedChan but you can set initial capacity for In, Out, Buffer.
 // and max buffer capactiy.
-func NewUnboundedChanSize(initInCapacity, initOutCapacity, initBufCapacity int, maxBufCapacity ...int) *UnboundedChan {
+func NewUnboundedChanSize(initInCapacity, initOutCapacity, initBufCapacity int, maxBufferSize ...int) *UnboundedChan {
 	in := make(chan T, initInCapacity)
 	out := make(chan T, initOutCapacity)
-	ch := UnboundedChan{In: in, Out: out, buffer: NewRingBuffer(initBufCapacity, maxBufCapacity...)}
+	ch := UnboundedChan{In: in, Out: out, buffer: NewRingBuffer(initBufCapacity, maxBufferSize...)}
 
 	go process(in, out, &ch)
 

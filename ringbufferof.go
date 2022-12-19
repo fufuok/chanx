@@ -4,42 +4,36 @@
 package chanx
 
 // RingBufferOf is a ring buffer for common types.
-// It never is full and always grows if it will be full.
+// It is never full and always grows if it will be full.
 // It is not thread-safe(goroutine-safe) so you must use the lock-like synchronization primitive
 // to use it in multiple writers and multiple readers.
-// Beyond maxBufSize, data is discarded.
+// Exceeding maxSize, data will be discarded.
 type RingBufferOf[T any] struct {
 	buf         []T
 	initialSize int
 	size        int
-	maxBufSize  int
+	maxSize     int
 	discards    uint64
 	r           int // read pointer
 	w           int // write pointer
 	onDiscards  func(T)
 }
 
-func NewRingBufferOf[T any](initialSize int, maxBufCapacity ...int) *RingBufferOf[T] {
-	if initialSize <= 0 {
-		panic("initial size must be great than zero")
-	}
-	// initial size must >= 2
-	if initialSize == 1 {
-		initialSize = 2
+func NewRingBufferOf[T any](initialSize int, maxBufferSize ...int) *RingBufferOf[T] {
+	if initialSize < minBufferSize {
+		initialSize = minBufferSize
 	}
 
-	maxBufSize := 0
-	if len(maxBufCapacity) > 0 {
-		if maxBufCapacity[0] > 0 {
-			maxBufSize = maxBufCapacity[0] + initialSize
-		}
+	maxSize := 0
+	if len(maxBufferSize) > 0 && maxBufferSize[0] >= minBufferSize {
+		maxSize = maxBufferSize[0]
 	}
 
 	return &RingBufferOf[T]{
 		buf:         make([]T, initialSize),
 		initialSize: initialSize,
 		size:        initialSize,
-		maxBufSize:  maxBufSize,
+		maxSize:     maxSize,
 	}
 }
 
@@ -77,7 +71,7 @@ func (r *RingBufferOf[T]) Peek() T {
 }
 
 func (r *RingBufferOf[T]) Write(v T) {
-	if r.maxBufSize > 0 && r.Len() >= r.maxBufSize {
+	if r.maxSize > 0 && r.Len() >= r.maxSize {
 		r.discards++
 		if r.onDiscards != nil {
 			r.onDiscards(v)
@@ -125,8 +119,8 @@ func (r *RingBufferOf[T]) Capacity() int {
 	return r.size
 }
 
-func (r *RingBufferOf[T]) MaxBufSize() int {
-	return r.maxBufSize
+func (r *RingBufferOf[T]) MaxSize() int {
+	return r.maxSize
 }
 
 func (r *RingBufferOf[T]) Discards() uint64 {
@@ -152,16 +146,16 @@ func (r *RingBufferOf[T]) Reset() {
 	r.buf = make([]T, r.initialSize)
 }
 
-func (r *RingBufferOf[T]) SetMaxCapacity(n int) int {
+func (r *RingBufferOf[T]) SetMaxSize(n int) int {
 	if n == 0 {
 		// Unbounded
-		r.maxBufSize = 0
-	} else if n > 0 {
+		r.maxSize = 0
+	} else if n >= minBufferSize {
 		// Reset maximum limit
-		r.maxBufSize = r.initialSize + n
+		r.maxSize = n
 	}
 
-	return r.MaxBufSize()
+	return r.maxSize
 }
 
 func (r *RingBufferOf[T]) SetOnDiscards(fn func(T)) {
