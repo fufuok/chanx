@@ -1,15 +1,19 @@
 package chanx
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/goleak"
 )
 
 func TestMakeUnboundedChan(t *testing.T) {
-	ch := NewUnboundedChan(100)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ch := NewUnboundedChan(ctx, 100)
 
 	for i := 1; i < 200; i++ {
 		ch.In <- int64(i)
@@ -39,7 +43,9 @@ func TestMakeUnboundedChan(t *testing.T) {
 }
 
 func TestMakeUnboundedChanSize(t *testing.T) {
-	ch := NewUnboundedChanSize(10, 50, 100)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ch := NewUnboundedChanSize(ctx, 10, 50, 100)
 
 	for i := 1; i < 200; i++ {
 		ch.In <- int64(i)
@@ -69,12 +75,19 @@ func TestMakeUnboundedChanSize(t *testing.T) {
 }
 
 func TestUnboundedChan_DataRace(t *testing.T) {
-	ch := NewUnboundedChan(1)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ch := NewUnboundedChan(ctx, 1)
 	stop := make(chan bool)
+	wg := &sync.WaitGroup{}
 	for i := 0; i < 100; i++ { // may tweak the number of iterations
-		go func() {
+		wg.Add(1)
+		go func(ctx context.Context) {
+			defer wg.Done()
 			for {
 				select {
+				case <-ctx.Done():
+					return
 				case <-stop:
 					return
 				default:
@@ -82,17 +95,30 @@ func TestUnboundedChan_DataRace(t *testing.T) {
 					<-ch.Out
 				}
 			}
-		}()
+		}(ctx)
 	}
 
 	for i := 0; i < 10000; i++ { // may tweak the number of iterations
 		ch.Len()
 	}
 	close(stop)
+	wg.Wait()
+}
+
+func TestUnbounded_GetDataWithGoleak(t *testing.T) {
+	defer goleak.VerifyNone(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ch := NewUnboundedChanSize(ctx, 10, 50, 100)
+	for i := 1; i < 200; i++ {
+		ch.In <- int64(i)
+	}
 }
 
 func TestUnboundedChanLen(t *testing.T) {
-	ch := NewUnboundedChanSize(10, 50, 100)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ch := NewUnboundedChanSize(ctx, 10, 50, 100)
 
 	for i := 1; i < 200; i++ {
 		ch.In <- int64(i)
@@ -131,7 +157,9 @@ func TestMakeUnboundedChanSizeMaxBuf(t *testing.T) {
 	initOutCapacity := 50
 	initBufCapacity := 100
 	maxBufCapacity := 110
-	ch := NewUnboundedChanSize(initInCapacity, initOutCapacity, initBufCapacity, maxBufCapacity)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ch := NewUnboundedChanSize(ctx, initInCapacity, initOutCapacity, initBufCapacity, maxBufCapacity)
 
 	for i := 0; i < 200; i++ {
 		ch.In <- uint64(i)
@@ -184,7 +212,9 @@ func TestMakeUnboundedChanSizeMaxBufCount(t *testing.T) {
 		count                 uint64
 		callbackDiscardsCount uint64
 	)
-	ch := NewUnboundedChanSize(initInCapacity, initOutCapacity, initBufCapacity, maxBufCapacity)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ch := NewUnboundedChanSize(ctx, initInCapacity, initOutCapacity, initBufCapacity, maxBufCapacity)
 	ch.SetOnDiscards(func(v interface{}) {
 		callbackDiscardsCount++
 	})
@@ -207,7 +237,6 @@ func TestMakeUnboundedChanSizeMaxBufCount(t *testing.T) {
 		ch.In <- uint64(i)
 	}
 	close(ch.In)
-
 	wg.Wait()
 
 	maxBufferSize := ch.MaxBufferSize()

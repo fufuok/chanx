@@ -33,14 +33,19 @@ go get github.com/fufuok/chanx
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/fufuok/chanx"
 )
 
 func main() {
-	ch := chanx.NewUnboundedChanOf[int](10)
-	// or ch := chanx.NewUnboundedChanSize[int](10, 200, 1000)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	ch := chanx.NewUnboundedChanOf[int](ctx, 10)
+	// or
+	// ch := chanx.NewUnboundedChanSizeOf[int](ctx, 10, 200, 1000)
 
 	go func() {
 		for i := 0; i < 100; i++ {
@@ -63,21 +68,23 @@ func main() {
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/fufuok/chanx"
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// 可选参数, 缓冲上限
-	// optional parameter, buffer size limit
-	const maxBufferSize = 10
-	ch := chanx.NewUnboundedChanOf[int](10, maxBufferSize)
+	const maxBufCapacity = 10
+	ch := chanx.NewUnboundedChanOf[int](ctx, 10, maxBufCapacity)
 	// or
-	// ch := chanx.NewUnboundedChanSize[int](10, 10, 10, maxBufferSize)
+	// ch := chanx.NewUnboundedChanSizeOf[int](ctx, 10, 10, 10, maxBufCapacity)
 
 	// 有缓冲上限时, 可选设置数据丢弃时回调
-	// When there is a buffer limit, optionally set the callback when data is discarded
 	ch.SetOnDiscards(func(v int) {
 		fmt.Println("discard: ", v)
 	})
@@ -89,10 +96,8 @@ func main() {
 		close(ch.In) // close In channel
 	}()
 
-	// time.Sleep(time.Second)
-
 	for v := range ch.Out { // read values
-		fmt.Println(v + 0)
+		fmt.Println(v + 1)
 	}
 }
 ```
