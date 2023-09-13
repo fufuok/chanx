@@ -82,8 +82,12 @@ func process(ctx context.Context, in, out chan T, ch *UnboundedChan) {
 	defer close(out)
 	drain := func() {
 		for !ch.buffer.IsEmpty() {
-			out <- ch.buffer.Pop()
-			atomic.AddInt64(&ch.bufCount, -1)
+			select {
+			case out <- ch.buffer.Pop():
+				atomic.AddInt64(&ch.bufCount, -1)
+			case <-ctx.Done():
+				return
+			}
 		}
 
 		ch.buffer.Reset()
