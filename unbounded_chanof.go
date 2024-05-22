@@ -22,39 +22,39 @@ type UnboundedChanOf[T any] struct {
 // Len returns len of In plus len of Out plus len of buffer.
 // It is not accurate and only for your evaluating approximate number of elements in this chan,
 // see https://github.com/smallnest/chanx/issues/7.
-func (c UnboundedChanOf[T]) Len() int {
+func (c *UnboundedChanOf[T]) Len() int {
 	return len(c.In) + c.BufLen() + len(c.Out)
 }
 
 // BufLen returns len of the buffer.
 // It is not accurate and only for your evaluating approximate number of elements in this chan,
 // see https://github.com/smallnest/chanx/issues/7.
-func (c UnboundedChanOf[T]) BufLen() int {
+func (c *UnboundedChanOf[T]) BufLen() int {
 	return int(atomic.LoadInt64(&c.bufCount))
 }
 
 // BufCapacity returns capacity of the buffer.
-func (c UnboundedChanOf[T]) BufCapacity() int {
+func (c *UnboundedChanOf[T]) BufCapacity() int {
 	return c.buffer.Capacity()
 }
 
 // MaxBufferSize returns maximum capacity of the buffer.
-func (c UnboundedChanOf[T]) MaxBufferSize() int {
+func (c *UnboundedChanOf[T]) MaxBufferSize() int {
 	return c.buffer.MaxSize()
 }
 
 // Discards returns the number of discards.
-func (c UnboundedChanOf[T]) Discards() uint64 {
+func (c *UnboundedChanOf[T]) Discards() uint64 {
 	return c.buffer.Discards()
 }
 
 // SetMaxBufferSize reset the maximum capacity of buffer
-func (c UnboundedChanOf[T]) SetMaxBufferSize(n int) int {
+func (c *UnboundedChanOf[T]) SetMaxBufferSize(n int) int {
 	return c.buffer.SetMaxSize(n)
 }
 
 // SetOnDiscards set the callback function when data is discarded
-func (c UnboundedChanOf[T]) SetOnDiscards(fn func(T)) {
+func (c *UnboundedChanOf[T]) SetOnDiscards(fn func(T)) {
 	c.buffer.SetOnDiscards(fn)
 }
 

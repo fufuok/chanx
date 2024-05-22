@@ -22,39 +22,39 @@ type UnboundedChan struct {
 // Len returns len of In plus len of Out plus len of buffer.
 // It is not accurate and only for your evaluating approximate number of elements in this chan,
 // see https://github.com/smallnest/chanx/issues/7.
-func (c UnboundedChan) Len() int {
+func (c *UnboundedChan) Len() int {
 	return len(c.In) + c.BufLen() + len(c.Out)
 }
 
 // BufLen returns len of the buffer.
 // It is not accurate and only for your evaluating approximate number of elements in this chan,
 // see https://github.com/smallnest/chanx/issues/7.
-func (c UnboundedChan) BufLen() int {
+func (c *UnboundedChan) BufLen() int {
 	return int(atomic.LoadInt64(&c.bufCount))
 }
 
 // BufCapacity returns capacity of the buffer.
-func (c UnboundedChan) BufCapacity() int {
+func (c *UnboundedChan) BufCapacity() int {
 	return c.buffer.Capacity()
 }
 
 // MaxBufferSize returns maximum capacity of the buffer.
-func (c UnboundedChan) MaxBufferSize() int {
+func (c *UnboundedChan) MaxBufferSize() int {
 	return c.buffer.MaxSize()
 }
 
 // Discards returns the number of discards.
-func (c UnboundedChan) Discards() uint64 {
+func (c *UnboundedChan) Discards() uint64 {
 	return c.buffer.Discards()
 }
 
 // SetMaxBufferSize reset the maximum capacity of buffer
-func (c UnboundedChan) SetMaxBufferSize(n int) int {
+func (c *UnboundedChan) SetMaxBufferSize(n int) int {
 	return c.buffer.SetMaxSize(n)
 }
 
 // SetOnDiscards set the callback function when data is discarded
-func (c UnboundedChan) SetOnDiscards(fn func(interface{})) {
+func (c *UnboundedChan) SetOnDiscards(fn func(interface{})) {
 	c.buffer.SetOnDiscards(fn)
 }
 
