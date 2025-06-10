@@ -13,7 +13,7 @@ var ErrIsEmpty = errors.New("ringbuffer is empty")
 // It is not thread-safe(goroutine-safe) so you must use the lock-like synchronization primitive
 // to use it in multiple writers and multiple readers.
 // Exceeding maxSize, data will be discarded.
-type RingBuffer struct {
+type RingBuffer[T any] struct {
 	buf         []T
 	initialSize int
 	size        int
@@ -21,10 +21,10 @@ type RingBuffer struct {
 	discards    uint64
 	r           int // read pointer
 	w           int // write pointer
-	onDiscards  func(interface{})
+	onDiscards  func(T)
 }
 
-func NewRingBuffer(initialSize int, maxBufferSize ...int) *RingBuffer {
+func NewRingBuffer[T any](initialSize int, maxBufferSize ...int) *RingBuffer[T] {
 	if initialSize < minBufferSize {
 		initialSize = minBufferSize
 	}
@@ -34,7 +34,7 @@ func NewRingBuffer(initialSize int, maxBufferSize ...int) *RingBuffer {
 		maxSize = maxBufferSize[0]
 	}
 
-	return &RingBuffer{
+	return &RingBuffer[T]{
 		buf:         make([]T, initialSize),
 		initialSize: initialSize,
 		size:        initialSize,
@@ -42,9 +42,10 @@ func NewRingBuffer(initialSize int, maxBufferSize ...int) *RingBuffer {
 	}
 }
 
-func (r *RingBuffer) Read() (T, error) {
+func (r *RingBuffer[T]) Read() (T, error) {
+	var t T
 	if r.r == r.w {
-		return nil, ErrIsEmpty
+		return t, ErrIsEmpty
 	}
 
 	v := r.buf[r.r]
@@ -56,16 +57,16 @@ func (r *RingBuffer) Read() (T, error) {
 	return v, nil
 }
 
-func (r *RingBuffer) Pop() T {
+func (r *RingBuffer[T]) Pop() T {
 	v, err := r.Read()
-	if err == ErrIsEmpty { // Empty
+	if errors.Is(err, ErrIsEmpty) { // Empty
 		panic(ErrIsEmpty.Error())
 	}
 
 	return v
 }
 
-func (r *RingBuffer) Peek() T {
+func (r *RingBuffer[T]) Peek() T {
 	if r.r == r.w { // Empty
 		panic(ErrIsEmpty.Error())
 	}
@@ -74,7 +75,7 @@ func (r *RingBuffer) Peek() T {
 	return v
 }
 
-func (r *RingBuffer) Write(v T) {
+func (r *RingBuffer[T]) Write(v T) {
 	if r.maxSize > 0 && r.Len() >= r.maxSize {
 		r.discards++
 		if r.onDiscards != nil {
@@ -95,7 +96,7 @@ func (r *RingBuffer) Write(v T) {
 	}
 }
 
-func (r *RingBuffer) grow() {
+func (r *RingBuffer[T]) grow() {
 	var size int
 	if r.size < 1024 {
 		size = r.size * 2
@@ -114,24 +115,24 @@ func (r *RingBuffer) grow() {
 	r.buf = buf
 }
 
-func (r *RingBuffer) IsEmpty() bool {
+func (r *RingBuffer[T]) IsEmpty() bool {
 	return r.r == r.w
 }
 
 // Capacity returns the size of the underlying buffer.
-func (r *RingBuffer) Capacity() int {
+func (r *RingBuffer[T]) Capacity() int {
 	return r.size
 }
 
-func (r *RingBuffer) MaxSize() int {
+func (r *RingBuffer[T]) MaxSize() int {
 	return r.maxSize
 }
 
-func (r *RingBuffer) Discards() uint64 {
+func (r *RingBuffer[T]) Discards() uint64 {
 	return r.discards
 }
 
-func (r *RingBuffer) Len() int {
+func (r *RingBuffer[T]) Len() int {
 	if r.r == r.w {
 		return 0
 	}
@@ -143,14 +144,14 @@ func (r *RingBuffer) Len() int {
 	return r.size - r.r + r.w
 }
 
-func (r *RingBuffer) Reset() {
+func (r *RingBuffer[T]) Reset() {
 	r.r = 0
 	r.w = 0
 	r.size = r.initialSize
 	r.buf = make([]T, r.initialSize)
 }
 
-func (r *RingBuffer) SetMaxSize(n int) int {
+func (r *RingBuffer[T]) SetMaxSize(n int) int {
 	if n == 0 {
 		// Unbounded
 		r.maxSize = 0
@@ -162,7 +163,7 @@ func (r *RingBuffer) SetMaxSize(n int) int {
 	return r.maxSize
 }
 
-func (r *RingBuffer) SetOnDiscards(fn func(interface{})) {
+func (r *RingBuffer[T]) SetOnDiscards(fn func(T)) {
 	if fn != nil {
 		r.onDiscards = fn
 	}

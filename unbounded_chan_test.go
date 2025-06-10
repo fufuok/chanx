@@ -13,7 +13,7 @@ import (
 func TestMakeUnboundedChan(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ch := NewUnboundedChan(ctx, 100)
+	ch := NewUnboundedChan[int64](ctx, 100)
 
 	for i := 1; i < 200; i++ {
 		ch.In <- int64(i)
@@ -26,7 +26,7 @@ func TestMakeUnboundedChan(t *testing.T) {
 		defer wg.Done()
 
 		for v := range ch.Out {
-			count += v.(int64)
+			count += v
 		}
 	}()
 
@@ -45,7 +45,7 @@ func TestMakeUnboundedChan(t *testing.T) {
 func TestMakeUnboundedChanSize(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ch := NewUnboundedChanSize(ctx, 10, 50, 100)
+	ch := NewUnboundedChanSize[int64](ctx, 10, 50, 100)
 
 	for i := 1; i < 200; i++ {
 		ch.In <- int64(i)
@@ -58,7 +58,7 @@ func TestMakeUnboundedChanSize(t *testing.T) {
 		defer wg.Done()
 
 		for v := range ch.Out {
-			count += v.(int64)
+			count += v
 		}
 	}()
 
@@ -77,7 +77,7 @@ func TestMakeUnboundedChanSize(t *testing.T) {
 func TestUnboundedChan_DataRace(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ch := NewUnboundedChan(ctx, 1)
+	ch := NewUnboundedChan[int64](ctx, 1)
 	stop := make(chan bool)
 	wg := &sync.WaitGroup{}
 	for i := 0; i < 100; i++ { // may tweak the number of iterations
@@ -105,11 +105,11 @@ func TestUnboundedChan_DataRace(t *testing.T) {
 	wg.Wait()
 }
 
-func TestUnbounded_GetDataWithGoleak(t *testing.T) {
+func TestUnboundedChan_GetDataWithGoleak(t *testing.T) {
 	defer goleak.VerifyNone(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ch := NewUnboundedChanSize(ctx, 10, 50, 100)
+	ch := NewUnboundedChanSize[int64](ctx, 10, 50, 100)
 	for i := 1; i < 200; i++ {
 		ch.In <- int64(i)
 	}
@@ -118,7 +118,7 @@ func TestUnbounded_GetDataWithGoleak(t *testing.T) {
 func TestUnboundedChanLen(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ch := NewUnboundedChanSize(ctx, 10, 50, 100)
+	ch := NewUnboundedChanSize[int64](ctx, 10, 50, 100)
 
 	for i := 1; i < 200; i++ {
 		ch.In <- int64(i)
@@ -159,7 +159,7 @@ func TestMakeUnboundedChanSizeMaxBuf(t *testing.T) {
 	maxBufCapacity := 110
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ch := NewUnboundedChanSize(ctx, initInCapacity, initOutCapacity, initBufCapacity, maxBufCapacity)
+	ch := NewUnboundedChanSize[uint64](ctx, initInCapacity, initOutCapacity, initBufCapacity, maxBufCapacity)
 
 	for i := 0; i < 200; i++ {
 		ch.In <- uint64(i)
@@ -214,8 +214,8 @@ func TestMakeUnboundedChanSizeMaxBufCount(t *testing.T) {
 	)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	ch := NewUnboundedChanSize(ctx, initInCapacity, initOutCapacity, initBufCapacity, maxBufCapacity)
-	ch.SetOnDiscards(func(v interface{}) {
+	ch := NewUnboundedChanSize[uint64](ctx, initInCapacity, initOutCapacity, initBufCapacity, maxBufCapacity)
+	ch.SetOnDiscards(func(v uint64) {
 		callbackDiscardsCount++
 	})
 
@@ -227,9 +227,8 @@ func TestMakeUnboundedChanSizeMaxBufCount(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-
 		for range ch.Out {
-			count += 1
+			count++
 		}
 	}()
 
@@ -256,11 +255,43 @@ func TestMakeUnboundedChanSizeMaxBufCount(t *testing.T) {
 		t.Fatalf("expected discards <= %d but got %d", maxDiscards, discards)
 	}
 
+	if discards != callbackDiscardsCount {
+		t.Fatalf("expected discards == callbackDiscardsCount, but got %d and %d", callbackDiscardsCount, discards)
+	}
+
 	if count == 1000 {
 		t.Fatalf("expected count < 1000 but got %d", count)
 	}
 
 	if allCount != 1000 {
 		t.Fatalf("expected 1000 but got %d", allCount)
+	}
+}
+
+func BenchmarkUnboundedChanLen(b *testing.B) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ch := NewUnboundedChanSize[int64](ctx, 10, 50, 100)
+	for i := 1; i < 200; i++ {
+		ch.In <- int64(i)
+	}
+	// Benchmark the Len method
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = ch.Len()
+	}
+}
+
+func BenchmarkUnboundedBufLen(b *testing.B) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	ch := NewUnboundedChanSize[int64](ctx, 10, 50, 100)
+	for i := 1; i < 200; i++ {
+		ch.In <- int64(i)
+	}
+	// Benchmark the Len method
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = ch.BufLen()
 	}
 }

@@ -16,8 +16,8 @@ Ref: 实现无限缓存的channel | 鸟窝 https://colobu.com/2021/05/11/unbound
 
 ## 使用
 
-- Go 1.17.x or below: [unbounded_chan_test.go](unbounded_chan_test.go)
-- Go generic: [unbounded_chanof_test.go](unbounded_chanof_test.go)
+- Go 1.17.x or below: [v1.2.2](https://github.com/fufuok/chanx/releases/tag/v1.2.2)
+- Go generic: latest version
 
 ### 安装
 
@@ -43,9 +43,9 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	ch := chanx.NewUnboundedChanOf[int](ctx, 10)
+	ch := chanx.NewUnboundedChan[int](ctx, 10)
 	// or
-	// ch := chanx.NewUnboundedChanSizeOf[int](ctx, 10, 200, 1000)
+	// ch := chanx.NewUnboundedChanSize[int](ctx, 10, 200, 1000)
 
 	go func() {
 		for i := 0; i < 100; i++ {
@@ -80,9 +80,9 @@ func main() {
 
 	// 可选参数, 缓冲上限
 	const maxBufCapacity = 10
-	ch := chanx.NewUnboundedChanOf[int](ctx, 10, maxBufCapacity)
+	ch := chanx.NewUnboundedChan[int](ctx, 10, maxBufCapacity)
 	// or
-	// ch := chanx.NewUnboundedChanSizeOf[int](ctx, 10, 10, 10, maxBufCapacity)
+	// ch := chanx.NewUnboundedChanSize[int](ctx, 10, 10, 10, maxBufCapacity)
 
 	// 有缓冲上限时, 可选设置数据丢弃时回调
 	ch.SetOnDiscards(func(v int) {
